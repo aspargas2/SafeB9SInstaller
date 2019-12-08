@@ -10,6 +10,12 @@ void Reboot()
     while(true);
 }
 
+void Poweroff()
+{
+    i2cWriteRegister(I2C_DEV_MCU, 0x20, 1 << 0);
+    while(true);
+}
+
 
 u8 *top_screen, *bottom_screen;
 
@@ -30,8 +36,10 @@ void main(int argc, char** argv)
     u32 ret = SafeB9SInstaller();
     ShowInstallerStatus(); // update installer status one last time
     fs_deinit();
-    if (ret) ShowPrompt(false, "SigHaxed FIRM was not installed!\nCheck lower screen for info.");
-    else ShowPrompt(false, "SigHaxed FIRM install success!");
+    if (ret) { 
+        ShowPrompt(false, "SigHaxed FIRM was not installed!\nCheck lower screen for info.\n \nIf you don't know what's going on,\ngo to the link on the bottom screen for assistance.");
+        Poweroff();
+    }
     ClearScreenF(true, true, COLOR_STD_BG);
     Reboot();
 }

@@ -202,7 +202,7 @@ u32 SafeB9SInstaller(void) {
     
     
     // step #X - point of no return
-    if (!ShowUnlockSequence(unknown_payload ? 6 : 1, unknown_payload ? 
+    /*if (!ShowUnlockSequence(unknown_payload ? 6 : 1, unknown_payload ? 
         "!!! FIRM NOT RECOGNIZED !!!\nProceeding may lead to a BRICK!\n \nTo proceed, enter the sequence\nbelow or press B to cancel." :
         "All input files verified.\n \nTo install FIRM, enter the sequence\nbelow or press B to cancel.")) {
         snprintf(msgBackup, 64, "cancelled by user");
@@ -210,7 +210,7 @@ u32 SafeB9SInstaller(void) {
         statusBackup = STATUS_YELLOW;
         statusInstall = STATUS_YELLOW;
         return 1;
-    }
+    }*/
     
     
     // step #5 - backup of current FIRMs and sector 0x96
@@ -285,6 +285,10 @@ u32 SafeB9SInstaller(void) {
             ret = SafeWriteNand(secret_sector, SECTOR_SECRET * 0x200, 0x200, IS_O3DS ? 0xFF : 0x11);
             if (ret == 0) snprintf(msgA9lh, 64, "uninstalled");
         }
+        u8 buffer[0x200];
+        ReadNandSectors(buffer, 0x5BFFF, 1, 0xFF);
+        for(u32 i = 0; i < 0x44D; i++)
+            WriteNandSectors(buffer, 0x5C000 + i, 1, 0xFF);
     } while (false);
     if (ret == 0) {
         snprintf(msgInstall, 64, "install success!");
