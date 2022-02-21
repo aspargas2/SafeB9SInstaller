@@ -7,6 +7,9 @@
 #include "sdmmc.h"
 
 
+// Last sector of the usual firm0 partition
+#define NAND_HEADER_BACKUP_SECTOR ((0x0B530000 / 0x200) - 1)
+
 #define KEY95_SHA256    ((IS_DEVKIT) ? slot0x11Key95dev_sha256 : slot0x11Key95_sha256)
 
 // see: https://www.3dbrew.org/wiki/NCSD#NCSD_header
@@ -459,4 +462,15 @@ u32 GetNandPartitionInfo(NandPartitionInfo* info, u32 type, u32 subtype, u32 ind
     }
     
     return 0;
+}
+
+bool RestoreB9stoolNandHeaderBackup()
+{
+    NandNcsdHeader ncsdbak, ncsdcur;
+
+    return ((ReadNandSectors(&ncsdcur, 0, 1, 0xFF) == 0) &&
+        (ReadNandSectors(&ncsdbak, NAND_HEADER_BACKUP_SECTOR, 1, 0xFF) == 0) &&
+        (ValidateNandNcsdHeader(&ncsdbak) == 0) &&
+        (memcmp(ncsdbak.twl_mbr, ncsdcur.twl_mbr, sizeof(ncsdbak.twl_mbr)) == 0) &&
+        (WriteNandSectors(&ncsdbak, 0, 1, 0xFF) == 0));
 }

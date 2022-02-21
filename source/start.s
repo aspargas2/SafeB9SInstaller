@@ -3,84 +3,8 @@
 .align 4
 .arm
 
-@ if the binary is booted from Brahma/CakeHax/k9lh
-@ the entrypoint is <start + 0x0>
-@ framebuffers are already set
 _start:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop @ dummy
-    b _skip_gw
 
-@ if the binary is booted from the GW exploit
-@ the entrypoint is <start + 0x30>
-_start_gw:
-
-    @@wait for the arm11 kernel threads to be ready
-    mov r1, #0x10000
-    waitLoop9:
-        sub r1, #1
-        cmp r1, #0
-        bgt waitLoop9
-
-    mov r1, #0x10000
-    waitLoop92:
-        sub r1, #1
-        cmp r1, #0
-        bgt waitLoop92
-
-
-    @ copy the payload to the standard entrypoint (0x23F00000)
-    adr r0, _start
-    add r1, r0, #0x100000
-    ldr r2, .entry
-    .copy_binary_fcram:
-        cmp r0, r1
-        ldrlt r3, [r0], #4
-        strlt r3, [r2], #4
-        blt .copy_binary_fcram
-
-    @ setup framebuffers to look like Brahma/etc
-
-    ldr r0, .gw_fba
-    ldr r1, [r0, #0x18]
-    and r1, #1
-    ldr r1, [r0, r1, lsl #2] @ r1 := top framebuffer loc
-    mov r2, r1               @ r2 := top framebuffer loc
-
-    ldr r0, .gw_fbb
-    ldr r3, [r0, #0xC]
-    and r3, #1
-    ldr r3, [r0, r3, lsl #2] @ r3 := bottom framebuffer loc
-
-    ldr r0, .cakehax
-    stmia r0, {r1,r2,r3}
-    @ framebuffers properly set
-
-    ldr r3, =0xFFFF0830         @ flush (clean & invalidate) entire dcache b9 func
-    blx r3
-
-    mov r3, #0
-    mcr p15, 0, r3, c7, c5, 0   @ invalidate I-cache
-
-    mov r2, #0
-    ldr r3, .entry
-    bx r3
-
-.gw_fba:  .word 0x080FFFC0
-.gw_fbb:  .word 0x080FFFD0
-.cakehax: .word 0x23FFFE00
-.entry:   .word 0x23F00000
-
-_skip_gw:
     mov r9, r0      @ argc
     mov r10, r1     @ argv
 
@@ -121,7 +45,7 @@ _skip_gw:
 
     @ Sets MPU permissions and cache settings
     ldr r0, =0xFFFF001F	@ ffff0000 64k  | bootrom (unprotected / protected)
-    ldr r1, =0x3000801B	@ 30000000 16k  | dtcm
+    ldr r1, =0x3000801B	@ 30008000 16k  | dtcm
     ldr r2, =0x01FF801D	@ 01ff8000 32k  | itcm
     ldr r3, =0x08000029	@ 08000000 2M   | arm9 mem (O3DS / N3DS) 
     ldr r4, =0x10000029	@ 10000000 2M   | io mem (ARM9 / first 2MB)
@@ -159,7 +83,7 @@ _skip_gw:
     mov r1, #0x340
     str r1, [r0]
 
-    ldr sp, =0x23F00000
+    ldr sp, =0x3000C000
 
     mov r0, r9
     mov r1, r10

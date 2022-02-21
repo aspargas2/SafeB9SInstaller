@@ -7,6 +7,16 @@
 #include "qff.h"
 #include "hid.h"
 
+#if __has_include("bins/secret_sector.h")
+#include "bins/secret_sector.h"
+#else
+static u8 secret_sector[0x200];
+#endif
+
+#if __has_include("bins/payload.h")
+#include "bins/payload.h"
+#endif
+
 #define COLOR_STATUS(s) ((s == STATUS_GREEN) ? COLOR_BRIGHTGREEN : (s == STATUS_YELLOW) ? COLOR_BRIGHTYELLOW : (s == STATUS_RED) ? COLOR_RED : COLOR_DARKGREY)
 
 #define MIN_SD_FREE (16 * 1024 * 1024) // 16MB
@@ -45,11 +55,11 @@ u32 ShowInstallerStatus(void) {
     const u32 pos_yu = 230;
     const u32 pos_y0 = pos_yb + 50;
     const u32 stp = 14;
-    
+
     // DrawStringF(BOT_SCREEN, pos_xb, pos_yb, COLOR_STD_FONT, COLOR_STD_BG, "SafeB9SInstaller v" VERSION "\n" "-----------------------" "\n" "https://github.com/d0k3/SafeB9SInstaller");
     DrawStringF(BOT_SCREEN, pos_xb, pos_yb, COLOR_STD_FONT, COLOR_STD_BG, APP_TITLE "\n" "%.*s" "\n" APP_URL,
         strnlen(APP_TITLE, 32), "--------------------------------");
-    
+
     DrawStringF(BOT_SCREEN, pos_x0, pos_y0 + (0*stp), COLOR_STD_FONT, COLOR_STD_BG, "ARM9LoaderHax  -");
     DrawStringF(BOT_SCREEN, pos_x0, pos_y0 + (1*stp), COLOR_STD_FONT, COLOR_STD_BG, "MicroSD Card   -");
     DrawStringF(BOT_SCREEN, pos_x0, pos_y0 + (2*stp), COLOR_STD_FONT, COLOR_STD_BG, "Sighaxed FIRM  -");
@@ -57,7 +67,7 @@ u32 ShowInstallerStatus(void) {
     DrawStringF(BOT_SCREEN, pos_x0, pos_y0 + (4*stp), COLOR_STD_FONT, COLOR_STD_BG, "Crypto Status  -");
     DrawStringF(BOT_SCREEN, pos_x0, pos_y0 + (5*stp), COLOR_STD_FONT, COLOR_STD_BG, "Backup Status  -");
     DrawStringF(BOT_SCREEN, pos_x0, pos_y0 + (6*stp), COLOR_STD_FONT, COLOR_STD_BG, "Install Status -");
-    
+
     DrawStringF(BOT_SCREEN, pos_x1, pos_y0 + (0*stp), COLOR_STATUS(statusA9lh)   , COLOR_STD_BG, "%-21.21s", msgA9lh   );
     DrawStringF(BOT_SCREEN, pos_x1, pos_y0 + (1*stp), COLOR_STATUS(statusSdCard) , COLOR_STD_BG, "%-21.21s", msgSdCard );
     DrawStringF(BOT_SCREEN, pos_x1, pos_y0 + (2*stp), COLOR_STATUS(statusFirm)   , COLOR_STD_BG, "%-21.21s", msgFirm   );
@@ -65,7 +75,7 @@ u32 ShowInstallerStatus(void) {
     DrawStringF(BOT_SCREEN, pos_x1, pos_y0 + (4*stp), COLOR_STATUS(statusCrypto) , COLOR_STD_BG, "%-21.21s", msgCrypto );
     DrawStringF(BOT_SCREEN, pos_x1, pos_y0 + (5*stp), COLOR_STATUS(statusBackup) , COLOR_STD_BG, "%-21.21s", msgBackup );
     DrawStringF(BOT_SCREEN, pos_x1, pos_y0 + (6*stp), COLOR_STATUS(statusInstall), COLOR_STD_BG, "%-21.21s", msgInstall);
-    
+
     DrawStringF(BOT_SCREEN, pos_xb, pos_yu - 10, COLOR_STD_FONT, COLOR_STD_BG, APP_USAGE);
     return 0;
 }
@@ -73,16 +83,16 @@ u32 ShowInstallerStatus(void) {
 u32 SafeB9SInstaller(void) {
     UINT bt;
     u32 ret = 0;
-    
+
     // initialization
     ShowString("Initializing, please wait...");
-    
-    
+
+
     // step #0 - a9lh check
     snprintf(msgA9lh, 64, (IS_A9LH && !IS_SIGHAX) ? "installed" : "not installed");
     statusA9lh = STATUS_GREEN;
     ShowInstallerStatus();
-    
+
     // step #1 - init/check SD card
     snprintf(msgSdCard, 64, "checking...");
     statusSdCard = STATUS_YELLOW;
@@ -102,8 +112,8 @@ u32 SafeB9SInstaller(void) {
     ShowInstallerStatus();
     if (sdFree < MIN_SD_FREE) return 1;
     // SD card okay!
-    
-    
+
+
     // step #2 - check sighaxed firm
     snprintf(msgFirm, 64, "checking...");
     statusFirm = STATUS_YELLOW;
@@ -113,14 +123,23 @@ u32 SafeB9SInstaller(void) {
     bool unknown_payload = false;
     if ((f_qread(NAME_SIGHAXFIRM, FIRM_BUFFER, 0, FIRM_BUFFER_SIZE, &firm_size) != FR_OK) ||
         (firm_size < 0x200)) {
+        #ifdef payload
+        memcpy(FIRM_BUFFER, payload, payload_size);
+        snprintf(msgFirm, 64, "using embedded");
+        #else
         snprintf(msgFirm, 64, "file not found");
         statusFirm = STATUS_RED;
         return 1;
+        #endif
     }
     if ((f_qread(NAME_SIGHAXFIRMSHA, firm_sha, 0, 0x20, &bt) != FR_OK) || (bt != 0x20)) {
+        #ifdef payload_hash
+        memcpy(firm_sha, payload_hash, 0x20);
+        #else
         snprintf(msgFirm, 64, ".sha file not found");
         statusFirm = STATUS_RED;
         return 1;
+        #endif
     }
     if (ValidateFirm(FIRM_BUFFER, firm_sha, firm_size, NULL) != 0) {
         snprintf(msgFirm, 64, "invalid FIRM");
@@ -143,25 +162,28 @@ u32 SafeB9SInstaller(void) {
     statusFirm = unknown_payload ? STATUS_YELLOW : STATUS_GREEN;
     ShowInstallerStatus();
     // provided FIRM is okay!
-    
-    
+
+
     // step #3 - check secret_sector.bin file
-    u8 secret_sector[0x200] = { 0 };
     if (IS_A9LH && !IS_SIGHAX && !IS_O3DS) {
         snprintf(msgSector, 64, "checking...");
         statusSector = STATUS_YELLOW;
         ShowInstallerStatus();
-        if ((f_qread(NAME_SECTOR0x96, secret_sector, 0, 0x200, &bt) != FR_OK) || (bt != 0x200)) {
-            snprintf(msgSector, 64, "file not found");
-            statusSector = STATUS_RED;
-            return 1;
+        if (ValidateSector(secret_sector) == 0) {
+            snprintf(msgSector, 64, "using embedded");
+        } else {
+            if ((f_qread(NAME_SECTOR0x96, secret_sector, 0, 0x200, &bt) != FR_OK) || (bt != 0x200)) {
+                snprintf(msgSector, 64, "file not found");
+                statusSector = STATUS_RED;
+                return 1;
+            }
+            if (ValidateSector(secret_sector) != 0) {
+                snprintf(msgSector, 64, "invalid file");
+                statusSector = STATUS_RED;
+                return 1;
+            }
+            snprintf(msgSector, 64, "loaded & verified");
         }
-        if (ValidateSector(secret_sector) != 0) {
-            snprintf(msgSector, 64, "invalid file");
-            statusSector = STATUS_RED;
-            return 1;
-        }
-        snprintf(msgSector, 64, "loaded & verified");
     } else snprintf(msgSector, 64, "not required");
     statusSector = STATUS_GREEN;
     ShowInstallerStatus();
@@ -177,6 +199,10 @@ u32 SafeB9SInstaller(void) {
         NandPartitionInfo np_info;
         if (GetNandPartitionInfo(&np_info, NP_TYPE_FIRM, NP_SUBTYPE_CTR, n_firms) != 0) break;
         if ((firm_size > np_info.count * 0x200) || (np_info.count * 0x200 > WORK_BUFFER_SIZE)) {
+            if ((np_info.count) == 1 && RestoreB9stoolNandHeaderBackup()) {
+                n_firms = -1;
+                continue;
+            }
             n_firms = 0;
             break;
         }
@@ -285,8 +311,14 @@ u32 SafeB9SInstaller(void) {
             ret = SafeWriteNand(secret_sector, SECTOR_SECRET * 0x200, 0x200, IS_O3DS ? 0xFF : 0x11);
             if (ret == 0) snprintf(msgA9lh, 64, "uninstalled");
         }
+        if (ret != 0) break;
+        // clear the A9LH stage2 payload region
         u8 buffer[0x200];
         ReadNandSectors(buffer, 0x5BFFF, 1, 0xFF);
+        u8 byte = buffer[0];
+        if (byte != 0x00 && byte != 0xFF)
+            byte = 0x00;
+        memset(buffer, byte, 0x200);
         for(u32 i = 0; i < 0x44D; i++)
             WriteNandSectors(buffer, 0x5C000 + i, 1, 0xFF);
     } while (false);

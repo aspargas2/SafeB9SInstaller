@@ -73,3 +73,5 @@ u32 GetNandMinSizeSectors(void);
 u32 GetNandSizeSectors(void);
 u32 GetNandNcsdPartitionInfo(NandPartitionInfo* info, u32 type, u32 subtype, u32 index, NandNcsdHeader* ncsd);
 u32 GetNandPartitionInfo(NandPartitionInfo* info, u32 type, u32 subtype, u32 index);
+
+bool RestoreB9stoolNandHeaderBackup();

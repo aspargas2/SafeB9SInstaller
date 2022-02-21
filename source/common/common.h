@@ -64,9 +64,9 @@
 // buffer area defines (big buffer for firm)
 #define WORK_BUFFER         ((u8*) 0x21000000)
 #define WORK_BUFFER_SIZE    (0x400000)
-#define FIRM_BUFFER         ((u8*) 0x21400000)
+#define FIRM_BUFFER         ((u8*) 0x18400000)
 #define FIRM_BUFFER_SIZE    (0x400000)
-#define NAND_BUFFER         ((u8*) 0x21800000)
+#define NAND_BUFFER         ((u8*) 0x18000000)
 #define NAND_BUFFER_SIZE    (0x100000)
 
 // testfing flags, only useful to devs
