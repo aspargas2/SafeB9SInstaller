@@ -15,6 +15,7 @@ static u8 secret_sector[0x200];
 
 #if __has_include("bins/payload.h")
 #include "bins/payload.h"
+#define USE_EMBEDDED_FIRM
 #endif
 
 #define COLOR_STATUS(s) ((s == STATUS_GREEN) ? COLOR_BRIGHTGREEN : (s == STATUS_YELLOW) ? COLOR_BRIGHTYELLOW : (s == STATUS_RED) ? COLOR_RED : COLOR_DARKGREY)
@@ -123,8 +124,9 @@ u32 SafeB9SInstaller(void) {
     bool unknown_payload = false;
     if ((f_qread(NAME_SIGHAXFIRM, FIRM_BUFFER, 0, FIRM_BUFFER_SIZE, &firm_size) != FR_OK) ||
         (firm_size < 0x200)) {
-        #ifdef payload
-        memcpy(FIRM_BUFFER, payload, payload_size);
+        #ifdef USE_EMBEDDED_FIRM
+        memcpy(FIRM_BUFFER, payload, payload_len);
+		firm_size = payload_len;
         snprintf(msgFirm, 64, "using embedded");
         #else
         snprintf(msgFirm, 64, "file not found");
@@ -133,7 +135,7 @@ u32 SafeB9SInstaller(void) {
         #endif
     }
     if ((f_qread(NAME_SIGHAXFIRMSHA, firm_sha, 0, 0x20, &bt) != FR_OK) || (bt != 0x20)) {
-        #ifdef payload_hash
+        #ifdef USE_EMBEDDED_FIRM
         memcpy(firm_sha, payload_hash, 0x20);
         #else
         snprintf(msgFirm, 64, ".sha file not found");
