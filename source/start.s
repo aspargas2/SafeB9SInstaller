@@ -69,6 +69,14 @@ _start:
     ldr r1, =0x3000800A        @ set dtcm
     mcr p15, 0, r1, c9, c1, 0  @ set the dtcm Region Register
 
+    @ Wait for ARM11 before data cache gets turned on
+    ldr r0, =0xBEEFD00D
+    ldr r1, =0x27FFFFFC
+    stupid_pxi_loop:
+        ldr r2, [r1]
+        cmp r0, r2
+        bne stupid_pxi_loop
+
     @ Enable caches
     mrc p15, 0, r4, c1, c0, 0  @ read control register
     orr r4, r4, #(1<<18)       @ - itcm enable

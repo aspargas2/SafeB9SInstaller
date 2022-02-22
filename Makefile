@@ -120,13 +120,17 @@ common:
 binary: common
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
-firm: binary
-	@firmtool build $(OUTPUT).firm -n 0x08000100 -e 0 -D $(OUTPUT).bin -A 0x08000100 -C NDMA -i
+arm11elf:
+	@make --no-print-directory -C arm11
+
+firm: binary arm11elf
+	@firmtool build $(OUTPUT).firm -n 0x08000100 -D $(OUTPUT).bin arm11/arm11.elf -A 0x08000100 -C NDMA XDMA
 
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean SafeB9SInstaller...
 	@rm -fr $(BUILD) $(OUTPUT_D) $(RELEASE)
+	@make -C arm11 clean
 
 
 #---------------------------------------------------------------------------------
