@@ -4,6 +4,8 @@
 .arm
 
 _start:
+    @ Disable interrupts, enter SVC mode
+    msr cpsr_c, #0xD3
 
     mov r9, r0      @ argc
     mov r10, r1     @ argv
@@ -71,7 +73,9 @@ _start:
 
     @ Wait for ARM11 before data cache gets turned on
     ldr r0, =0xBEEFD00D
-    ldr r1, =0x27FFFFFC
+    ldr r1, =0x27FFFFF8
+    str r0, [r1]
+    add r1, #4
     stupid_pxi_loop:
         ldr r2, [r1]
         cmp r0, r2

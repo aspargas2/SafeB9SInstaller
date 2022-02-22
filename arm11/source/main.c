@@ -46,7 +46,8 @@ void __attribute__((noreturn)) MainLoop(void)
 	// enabling the pxi system and the vblank handler
 	GFX_init(GFX_BGR8);
 	
-	// broke man's PXI
+	// broke stupid man's PXI
+	while (*((u32*) 0x27FFFFF8) != 0xBEEFD00D);
 	*((u32*) 0x27FFFFFC) = 0xBEEFD00D;
 
 	// Die
