@@ -129,7 +129,7 @@ firm: binary arm11elf
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean SafeB9SInstaller...
-	@rm -fr $(BUILD) $(OUTPUT_D) $(RELEASE)
+	@rm -fr $(BUILD) $(OUTPUT_D) $(RELEASE) source/bins
 	@make -C arm11 clean
 
 
