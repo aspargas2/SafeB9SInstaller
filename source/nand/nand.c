@@ -195,7 +195,7 @@ bool CheckSector0x96Crypto(void)
 bool CheckFirmCrypto(void)
 {
     // check the FIRM magic
-    const u8 magic[8] = {'F', 'I', 'R', 'M'};
+    const u8 magic[4] = {'F', 'I', 'R', 'M'};
     for (u32 i = 0; i < 8; i++) {
         NandPartitionInfo np_info;
         u8 buffer[0x200];

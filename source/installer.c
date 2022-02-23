@@ -199,12 +199,14 @@ u32 SafeB9SInstaller(void) {
     u32 n_firms = 0;
     for (; n_firms < 8; n_firms++) {
         NandPartitionInfo np_info;
-        if (GetNandPartitionInfo(&np_info, NP_TYPE_FIRM, NP_SUBTYPE_CTR, n_firms) != 0) break;
-        if ((firm_size > np_info.count * 0x200) || (np_info.count * 0x200 > WORK_BUFFER_SIZE)) {
-            if ((np_info.count) == 1 && RestoreB9stoolNandHeaderBackup()) {
+        if (GetNandPartitionInfo(&np_info, NP_TYPE_FIRM, NP_SUBTYPE_CTR, n_firms) != 0) {
+            if (n_firms == 0 && RestoreB9stoolNandHeaderBackup()) {
                 n_firms = -1;
                 continue;
             }
+			break;
+		}
+        if ((firm_size > np_info.count * 0x200) || (np_info.count * 0x200 > WORK_BUFFER_SIZE)) {
             n_firms = 0;
             break;
         }
