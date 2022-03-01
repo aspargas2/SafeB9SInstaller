@@ -27,9 +27,10 @@ INCLUDES	:=	source source/common source/font source/fs source/crypto source/fatf
 #---------------------------------------------------------------------------------
 ARCH	:=	-mthumb -march=armv5te -mtune=arm946e-s -mthumb-interwork -flto
 
+FALSEPOSITIVES := -Wno-array-bounds -Wno-stringop-overflow -Wno-stringop-overread
 CFLAGS	:=	-g -Wall -Wextra -Wpedantic -Wcast-align -Wno-main -O2\
 			-march=armv5te -mtune=arm946e-s -fomit-frame-pointer -ffast-math -std=gnu11\
-			$(ARCH)
+			$(FALSEPOSITIVES) $(ARCH)
 
 CFLAGS	+=	$(INCLUDE) -DARM9
 
@@ -54,7 +55,7 @@ endif
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions
 
 ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	=	-T../link.ld -nostartfiles -g $(ARCH) -Wl,-Map,$(TARGET).map
+LDFLAGS	=	$(FALSEPOSITIVES) -T../link.ld -nostartfiles -g $(ARCH) -Wl,-Map,$(TARGET).map
 
 LIBS	:=
 
