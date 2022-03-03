@@ -46,14 +46,14 @@ _start:
     mcr p15, 0, r5, c5, c0, 3 @ write instruction access
 
     @ Sets MPU permissions and cache settings
-    ldr r0, =0xFFFF001F	@ ffff0000 64k  | bootrom (unprotected / protected)
-    ldr r1, =0x3000801B	@ 30008000 16k  | dtcm
-    ldr r2, =0x01FF801D	@ 01ff8000 32k  | itcm
-    ldr r3, =0x08000029	@ 08000000 2M   | arm9 mem (O3DS / N3DS) 
-    ldr r4, =0x10000029	@ 10000000 2M   | io mem (ARM9 / first 2MB)
-    ldr r5, =0x20000037	@ 20000000 256M | fcram (O3DS / N3DS)
-    ldr r6, =0x1FF00027	@ 1FF00000 1M   | dsp / axi wram
-    ldr r7, =0x1800002D	@ 18000000 8M   | vram (+ 2MB)
+    ldr r0, =0xFFFF001F @ ffff0000 64k  | bootrom (unprotected / protected)
+    ldr r1, =0x3000801B @ 30008000 16k  | dtcm
+    ldr r2, =0x01FF801D @ 01ff8000 32k  | itcm
+    ldr r3, =0x08000029 @ 08000000 2M   | arm9 mem (O3DS / N3DS)
+    ldr r4, =0x10000029 @ 10000000 2M   | io mem (ARM9 / first 2MB)
+    ldr r5, =0x20000037 @ 20000000 256M | fcram (O3DS / N3DS)
+    ldr r6, =0x1FF00027 @ 1FF00000 1M   | dsp / axi wram
+    ldr r7, =0x1800002D @ 18000000 8M   | vram (+ 2MB)
     mov r8, #0x2D
     mcr p15, 0, r0, c6, c0, 0
     mcr p15, 0, r1, c6, c1, 0
@@ -63,9 +63,9 @@ _start:
     mcr p15, 0, r5, c6, c5, 0
     mcr p15, 0, r6, c6, c6, 0
     mcr p15, 0, r7, c6, c7, 0
-    mcr p15, 0, r8, c3, c0, 0	@ Write bufferable 0, 2, 5
-    mcr p15, 0, r8, c2, c0, 0	@ Data cacheable 0, 2, 5
-    mcr p15, 0, r8, c2, c0, 1	@ Inst cacheable 0, 2, 5
+    mcr p15, 0, r8, c3, c0, 0 @ Write bufferable 0, 2, 5
+    mcr p15, 0, r8, c2, c0, 0 @ Data cacheable 0, 2, 5
+    mcr p15, 0, r8, c2, c0, 1 @ Inst cacheable 0, 2, 5
 
     @ Enable dctm
     ldr r1, =0x3000800A        @ set dtcm
@@ -76,9 +76,11 @@ _start:
     ldr r1, =0x27FFFFF8
     str r0, [r1]
     add r1, #4
+    mov r3, #0x400000
     stupid_pxi_loop:
         ldr r2, [r1]
-        cmp r0, r2
+        subs r3, #1
+        cmpne r0, r2
         bne stupid_pxi_loop
 
     @ Enable caches
