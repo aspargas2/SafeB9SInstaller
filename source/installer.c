@@ -114,6 +114,11 @@ u32 SafeB9SInstaller(void) {
     if (sdFree < MIN_SD_FREE) return 1;
     // SD card okay!
 
+    if (IS_UNLOCKED) { // write the OTP to unused NAND so if b9stool is immediately rerun it will have the OTP
+        u8 buffer[0x200];
+        memcpy(buffer, (void*) 0x10012000, 0x100);
+        WriteNandSectors(buffer, OTP_BACKUP_SECTOR, 1, 0xFF);
+    }
 
     // step #2 - check sighaxed firm
     snprintf(msgFirm, 64, "checking...");

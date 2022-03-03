@@ -6,10 +6,6 @@
 #include "unittype.h"
 #include "sdmmc.h"
 
-
-// Last sector of the usual firm0 partition
-#define NAND_HEADER_BACKUP_SECTOR ((0x0B530000 / 0x200) - 1)
-
 #define KEY95_SHA256    ((IS_DEVKIT) ? slot0x11Key95dev_sha256 : slot0x11Key95_sha256)
 
 // see: https://www.3dbrew.org/wiki/NCSD#NCSD_header

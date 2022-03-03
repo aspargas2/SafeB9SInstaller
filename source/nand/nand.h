@@ -29,6 +29,10 @@
 #define NP_SUBTYPE_CTR      2
 #define NP_SUBTYPE_CTR_N    3
 
+// Hardcoded stuff used by b9stool; last 2 sectors of firm0
+#define NAND_HEADER_BACKUP_SECTOR ((0x0B530000 / 0x200) - 1)
+#define OTP_BACKUP_SECTOR         ((0x0B530000 / 0x200) - 2)
+
 
 typedef struct {
     u32 sector;
