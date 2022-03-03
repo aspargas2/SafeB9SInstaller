@@ -126,7 +126,7 @@ u32 SafeB9SInstaller(void) {
         (firm_size < 0x200)) {
         #ifdef USE_EMBEDDED_FIRM
         memcpy(FIRM_BUFFER, payload, payload_len);
-		firm_size = payload_len;
+        firm_size = payload_len;
         snprintf(msgFirm, 64, "using embedded");
         #else
         snprintf(msgFirm, 64, "file not found");
@@ -204,8 +204,8 @@ u32 SafeB9SInstaller(void) {
                 n_firms = -1;
                 continue;
             }
-			break;
-		}
+            break;
+        }
         if ((firm_size > np_info.count * 0x200) || (np_info.count * 0x200 > WORK_BUFFER_SIZE)) {
             n_firms = 0;
             break;
