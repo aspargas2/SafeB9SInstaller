@@ -105,14 +105,16 @@ u32 SafeB9SInstaller(void) {
         (f_gettotalbyte("0:", &sdTotal) != FR_OK)) {
         snprintf(msgSdCard, 64, "init failed");
         statusSdCard = STATUS_RED;
-        return 1;
+        sdTotal = 0;
     }
     InitNandCrypto(); // for sector0x96 crypto and NAND drives
-    snprintf(msgSdCard, 64, "%lluMB/%lluMB free", sdFree / (1024 * 1024), sdTotal / (1024 * 1024));
-    statusSdCard = (sdFree < MIN_SD_FREE) ? STATUS_RED : STATUS_GREEN;
-    ShowInstallerStatus();
-    if (sdFree < MIN_SD_FREE) return 1;
-    // SD card okay!
+    if (sdTotal) {
+        snprintf(msgSdCard, 64, "%lluMB/%lluMB free", sdFree / (1024 * 1024), sdTotal / (1024 * 1024));
+        statusSdCard = (sdFree < MIN_SD_FREE) ? STATUS_RED : STATUS_GREEN;
+        ShowInstallerStatus();
+        if (sdFree < MIN_SD_FREE) return 1;
+        // SD card okay!
+    }
 
     if (IS_UNLOCKED) { // write the OTP to unused NAND so if b9stool is immediately rerun it will have the OTP
         u8 buffer[0x200];
@@ -249,53 +251,58 @@ u32 SafeB9SInstaller(void) {
     
     
     // step #5 - backup of current FIRMs and sector 0x96
-    snprintf(msgBackup, 64, "FIRM backup...");
-    statusBackup = STATUS_YELLOW;
-    ShowInstallerStatus();
-    ShowProgress(0, 0, "FIRM backup");
-    for (u32 i = 0; i < n_firms; i++) {
-        NandPartitionInfo np_info;
-        ret = GetNandPartitionInfo(&np_info, NP_TYPE_FIRM, NP_SUBTYPE_CTR, i);
-        if (ret != 0) break;
-        u32 fsize = np_info.count * 0x200;
-        u32 foffset = np_info.sector * 0x200;
-        char bakname[64];
-        snprintf(bakname, 64, NAME_FIRMBACKUP, i);
-        snprintf(msgBackup, 64, "FIRM backup (%lu/%lu)", i, n_firms);
+    if (sdTotal) {
+        snprintf(msgBackup, 64, "FIRM backup...");
+        statusBackup = STATUS_YELLOW;
         ShowInstallerStatus();
-        if ((ReadNandBytes(WORK_BUFFER, foffset, fsize, 0xFF) != 0) ||
-            (SafeQWriteFile(bakname, WORK_BUFFER, fsize) != 0)) {
-            ret = 1;
-            break;
+        ShowProgress(0, 0, "FIRM backup");
+        for (u32 i = 0; i < n_firms; i++) {
+            NandPartitionInfo np_info;
+            ret = GetNandPartitionInfo(&np_info, NP_TYPE_FIRM, NP_SUBTYPE_CTR, i);
+            if (ret != 0) break;
+            u32 fsize = np_info.count * 0x200;
+            u32 foffset = np_info.sector * 0x200;
+            char bakname[64];
+            snprintf(bakname, 64, NAME_FIRMBACKUP, i);
+            snprintf(msgBackup, 64, "FIRM backup (%lu/%lu)", i, n_firms);
+            ShowInstallerStatus();
+            if ((ReadNandBytes(WORK_BUFFER, foffset, fsize, 0xFF) != 0) ||
+                (SafeQWriteFile(bakname, WORK_BUFFER, fsize) != 0)) {
+                ret = 1;
+                break;
+            }
+            ShowProgress(i + 1, n_firms, "FIRM backup");
         }
-        ShowProgress(i + 1, n_firms, "FIRM backup");
-    }
-    if (ret != 0) {
-        snprintf(msgBackup, 64, "FIRM backup fail");
-        statusBackup = STATUS_RED;
-        return 1;
-    }
-    if ((IS_A9LH && !IS_SIGHAX)) {
-        snprintf(msgBackup, 64, "0x96 backup...");
-        ShowInstallerStatus();
-        u8 sector_backup0[0x200];
-        u8 sector_backup1[0x200];
-        f_unlink(NAME_SECTORBACKUP);
-        if ((ReadNandSectors(sector_backup0, 0x96, 1, 0xFF) != 0) ||
-            (f_qwrite(NAME_SECTORBACKUP, sector_backup0, 0, 0x200, &bt) != FR_OK) || (bt != 0x200) ||
-            (f_qread(NAME_SECTORBACKUP, sector_backup1, 0, 0x200, &bt) != FR_OK) || (bt != 0x200) ||
-            (memcmp(sector_backup0, sector_backup1, 0x200) != 0)) {
-            snprintf(msgBackup, 64, "0x96 backup fail");
+        if (ret != 0) {
+            snprintf(msgBackup, 64, "FIRM backup fail");
             statusBackup = STATUS_RED;
             return 1;
         }
+        if ((IS_A9LH && !IS_SIGHAX)) {
+            snprintf(msgBackup, 64, "0x96 backup...");
+            ShowInstallerStatus();
+            u8 sector_backup0[0x200];
+            u8 sector_backup1[0x200];
+            f_unlink(NAME_SECTORBACKUP);
+            if ((ReadNandSectors(sector_backup0, 0x96, 1, 0xFF) != 0) ||
+                (f_qwrite(NAME_SECTORBACKUP, sector_backup0, 0, 0x200, &bt) != FR_OK) || (bt != 0x200) ||
+                (f_qread(NAME_SECTORBACKUP, sector_backup1, 0, 0x200, &bt) != FR_OK) || (bt != 0x200) ||
+                (memcmp(sector_backup0, sector_backup1, 0x200) != 0)) {
+                snprintf(msgBackup, 64, "0x96 backup fail");
+                statusBackup = STATUS_RED;
+                return 1;
+            }
+        }
+        snprintf(msgBackup, 64, "backed up & verified");
+        statusBackup = STATUS_GREEN;
+        ShowInstallerStatus();
+        // backups done
+    } else {
+        snprintf(msgBackup, 64, "FIRM backup skipped");
+        statusBackup = STATUS_YELLOW;
+        ShowInstallerStatus();
     }
-    snprintf(msgBackup, 64, "backed up & verified");
-    statusBackup = STATUS_GREEN;
-    ShowInstallerStatus();
-    // backups done
-    
-    
+
     // step #6 - install sighaxed FIRM
     snprintf(msgInstall, 64, "FIRM install...");
     statusInstall = STATUS_YELLOW;
