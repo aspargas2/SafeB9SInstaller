@@ -72,13 +72,13 @@ _start:
     mcr p15, 0, r1, c9, c1, 0  @ set the dtcm Region Register
 
     @ Wait for ARM11 before data cache gets turned on
-    ldr r0, =0xBEEFD00D
-    ldr r1, =0x27FFFFF8
-    str r0, [r1]
-    add r1, #4
+    mov r0, #231
+    ldr r1, =0x10008001
+    strb r0, [r1]
+    sub r1, #1
     mov r3, #0x400000
     stupid_pxi_loop:
-        ldr r2, [r1]
+        ldrb r2, [r1]
         subs r3, #1
         cmpne r0, r2
         bne stupid_pxi_loop

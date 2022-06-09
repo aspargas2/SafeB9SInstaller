@@ -11,26 +11,6 @@
 #define FB3_MAGIC   "FASTBOOT 3DS   "
 #define FB3_OFFSET  0x200 // this is not actually used
 
-// see: https://www.3dbrew.org/wiki/FIRM#Firmware_Section_Headers
-typedef struct {
-    u32 offset;
-    u32 address;
-    u32 size;
-    u32 type;
-    u8  hash[0x20];
-} __attribute__((packed)) FirmSectionHeader;
-
-// see: https://www.3dbrew.org/wiki/FIRM#FIRM_Header
-typedef struct {
-    u8  magic[4];
-    u8  priority[4];
-    u32 entry_arm11;
-    u32 entry_arm9;
-    u8  reserved1[0x30];
-    FirmSectionHeader sections[4];
-    u8  signature[0x100];
-} __attribute__((packed, aligned(16))) FirmHeader;
-
 // from: https://github.com/AuroraWright/SafeA9LHInstaller/blob/master/source/installer.c#L9-L17
 const u8 sectorHash[0x20] = {
     0x82, 0xF2, 0x73, 0x0D, 0x2C, 0x2D, 0xA3, 0xF3, 0x01, 0x65, 0xF9, 0x87, 0xFD, 0xCC, 0xAC, 0x5C,
@@ -112,7 +92,7 @@ u32 ValidateFirm(void* firm, u8* firm_sha, u32 firm_size, char* output) {
     }
     
     // check provided .SHA
-    if (sha_cmp(firm_sha, firm, firm_size, SHA256_MODE) != 0) {
+    if (firm_sha && (sha_cmp(firm_sha, firm, firm_size, SHA256_MODE) != 0)) {
         if (output) snprintf(output, 64, "SHA hash mismatch");
         return 1;
     }

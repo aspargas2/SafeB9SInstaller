@@ -23,7 +23,7 @@ INCDIRS := source
 INCLUDE := $(foreach dir,$(INCDIRS),-I"$(shell pwd)/$(dir)")
 
 ASFLAGS += $(SUBARCH) $(INCLUDE)
-CFLAGS  += $(SUBARCH) $(INCLUDE) -flto
+CFLAGS  += $(SUBARCH) $(INCLUDE) -flto -Os
 LDFLAGS += $(SUBARCH) -Wl,-Map,$(TARGET).map -flto
 
 OBJECTS := $(patsubst $(SOURCE)/%.S, $(BUILD)/%.o, \

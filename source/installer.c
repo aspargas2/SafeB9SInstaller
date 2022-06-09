@@ -3,6 +3,7 @@
 #include "validator.h"
 #include "unittype.h"
 #include "nand.h"
+#include "bootfirm.h"
 #include "ui.h"
 #include "qff.h"
 #include "hid.h"
@@ -27,6 +28,7 @@ static u8 secret_sector[0x200];
 #define NAME_SECTOR0x96     (IS_DEVKIT ? INPUT_PATH "/secret_sector_dev.bin" : INPUT_PATH "/secret_sector.bin")
 #define NAME_FIRMBACKUP     INPUT_PATH "/firm%lu_enc.bak"
 #define NAME_SECTORBACKUP   INPUT_PATH "/sector0x96_enc.bak"
+#define NAME_ESCAPEFIRM     INPUT_PATH "/escape.firm"
 
 #define STATUS_GREY    -1
 #define STATUS_GREEN    0
@@ -47,7 +49,21 @@ static char msgSector[64]      = "not started";
 static char msgCrypto[64]      = "not started";
 static char msgBackup[64]      = "not started";
 static char msgInstall[64]     = "not started";
-    
+
+static void TryBootFirm(const char* path) {
+    FILINFO fno;
+    UINT firm_size;
+
+    if ((f_stat(path, &fno) != FR_OK) ||
+        (fno.fsize > FIRM_BUFFER_SIZE) || (fno.fsize < 0x200) ||
+        (f_qread(path, FIRM_BUFFER, 0, FIRM_BUFFER_SIZE, &firm_size) != FR_OK) ||
+        (fno.fsize != firm_size) || (ValidateFirm(FIRM_BUFFER, NULL, firm_size, NULL) != 0))
+        return;
+
+    *((u8*) 0x10008001) = 37;
+    BootFirm(FIRM_BUFFER, "sdmc:/boot9strap/escape.firm");
+}
+
 u32 ShowInstallerStatus(void) {
     const u32 pos_xb = 10;
     const u32 pos_x0 = pos_xb + 4;
@@ -109,6 +125,8 @@ u32 SafeB9SInstaller(void) {
     }
     InitNandCrypto(); // for sector0x96 crypto and NAND drives
     if (sdTotal) {
+        TryBootFirm(NAME_ESCAPEFIRM);
+
         snprintf(msgSdCard, 64, "%lluMB/%lluMB free", sdFree / (1024 * 1024), sdTotal / (1024 * 1024));
         statusSdCard = (sdFree < MIN_SD_FREE) ? STATUS_RED : STATUS_GREEN;
         ShowInstallerStatus();

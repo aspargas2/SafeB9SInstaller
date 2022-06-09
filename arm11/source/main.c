@@ -41,15 +41,23 @@ void __attribute__((noreturn)) MainLoop(void)
 
 	// enable interrupts
 	gicEnableInterrupt(MCU_INTERRUPT);
+	gicEnableInterrupt(VBLANK_INTERRUPT);
 
 	// perform gpu init after initializing mcu but before
 	// enabling the pxi system and the vblank handler
 	GFX_init(GFX_BGR8);
 	
 	// broke stupid man's PXI
-	while (*((u32*) 0x27FFFFF8) != 0xBEEFD00D);
-	*((u32*) 0x27FFFFFC) = 0xBEEFD00D;
+	while (*((u8*) 0x10163000) != 231);
+	*((u8*) 0x10163001) = 231;
 
-	// Die
-	while (1) ARM_WFI();
+	// wait for the arm9 to tell us to jump to firm
+	while (*((u8*) 0x10163000) != 37)
+		ARM_WFI();
+
+	gicDisableInterrupt(VBLANK_INTERRUPT);
+	gicDisableInterrupt(MCU_INTERRUPT);
+
+	SYS_CoreZeroShutdown();
+	SYS_CoreShutdown();
 }
