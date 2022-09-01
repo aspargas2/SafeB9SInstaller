@@ -1,4 +1,5 @@
 #include "sha.h"
+#include "mmio.h"
 
 void sha_init(u32 mode)
 {
@@ -21,14 +22,14 @@ void sha_update(const void* src, u32 size)
         size -= 0x40;
     }
     while(*REG_SHACNT & 1);
-    memcpy((void*)REG_SHAINFIFO, src32, size);
+    iomemcpy((void*)REG_SHAINFIFO, src32, size);
 }
 
 void sha_get(void* res) {
     *REG_SHACNT = (*REG_SHACNT & ~SHA_NORMAL_ROUND) | SHA_FINAL_ROUND;
     while(*REG_SHACNT & SHA_FINAL_ROUND);
     while(*REG_SHACNT & 1);
-    memcpy(res, (void*)REG_SHAHASH, (256 / 8));
+    iomemcpy(res, (void*)REG_SHAHASH, (256 / 8));
 }
 
 void sha_quick(void* res, const void* src, u32 size, u32 mode) {
