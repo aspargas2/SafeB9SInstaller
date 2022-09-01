@@ -3,7 +3,7 @@
 #define NUM_FS 4
 
 // don't use this area for anything else!
-static FATFS* fs = (FATFS*) 0x20316000;
+static FATFS* fs = (FATFS*) 0x080F8000;
 
 // currently open file systems
 static FRESULT fs_mounted[NUM_FS];
