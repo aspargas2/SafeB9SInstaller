@@ -327,6 +327,10 @@ u32 SafeB9SInstaller(void) {
     ShowInstallerStatus();
     #ifndef NO_WRITE
     ShowProgress(0, 0, "FIRM install");
+
+	f_unlink("0:/luma/config.bin");
+	f_unlink("0:/luma/config.ini");
+
     do {
         for (u32 i = 0; i < n_firms; i++) {
             NandPartitionInfo np_info;
