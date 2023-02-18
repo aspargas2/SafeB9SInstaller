@@ -28,7 +28,7 @@ INCLUDES	:=	source source/common source/font source/fs source/crypto source/fatf
 ARCH	:=	-mthumb -march=armv5te -mtune=arm946e-s -mthumb-interwork -flto
 
 FALSEPOSITIVES := -Wno-array-bounds -Wno-stringop-overflow -Wno-stringop-overread
-CFLAGS	:=	-g -Wall -Wextra -Wpedantic -Wcast-align -Wno-main -O2\
+CFLAGS	:=	-g -Wall -Wextra -Wpedantic -Werror -Wcast-align -Wno-main -O2\
 			-march=armv5te -mtune=arm946e-s -fomit-frame-pointer -ffast-math -std=gnu11\
 			$(FALSEPOSITIVES) $(ARCH)
 
